@@ -17,11 +17,51 @@ The capstone for Tier 2 is a real utility script — small enough to write in on
 
 ## Lesson 2.1: Loops
 
-A **loop** runs a block of code repeatedly. Three kinds matter in JScript: `while`, `do...while`, and `for`.
+> **New words in this lesson**
+>
+> - **shortcut assignment** — a shorthand like `x += 5` for `x = x + 5`
+> - **increment** — to add 1 (`++n`)
+> - **decrement** — to subtract 1 (`--n`)
+> - **loop** — code that repeats
+> - **while loop** — repeats as long as a condition is true
+> - **do-while loop** — like `while`, but always runs at least once
+> - **for loop** — repeats with a counter
+> - **infinite loop** — a loop that never stops (a bug)
+> - **label** — a name attached to a loop, used for `break` and `continue`
+> - **break** — exit a loop early
+> - **continue** — skip to the next iteration of a loop
+
+Before we get into loops proper, two operator shortcuts that show up everywhere from this point on — including in our first loop example.
+
+### Shortcut assignments
+
+You've already used `=` for assignment. JScript has shortcut versions for the common case of "modify a variable using its current value":
+
+```js
+var x = 10;
+x += 5;  // same as x = x + 5;  → 15
+x -= 3;  // same as x = x - 3;  → 12
+x *= 2;  // → 24
+x /= 4;  // → 6
+```
+
+The pattern: `x OP= value` is shorthand for `x = x OP value`. Works for any of the arithmetic operators.
+
+### Increment and decrement
+
+For the very common case of "add 1" or "subtract 1," there's an even shorter form: `++` and `--`.
+
+```js
+var n = 5;
+++n;     // n is now 6
+--n;     // n is back to 5
+```
+
+By style guide, **prefer the prefix form** (`++n`, `--n`) over the postfix form (`n++`, `n--`).
 
 ### `while`
 
-A `while` loop runs as long as a condition is true.
+A **loop** runs a block of code repeatedly. The simplest is `while`, which runs as long as a condition is true.
 
 ```js
 var n = 0;
@@ -157,6 +197,19 @@ In practice our codebase is mostly `for` loops, with the occasional `while` for 
 ---
 
 ## Lesson 2.2: Functions
+
+> **New words in this lesson**
+>
+> - **function** — a reusable, named block of code
+> - **call** (a function) — to run a function
+> - **parameter** — a placeholder name in a function definition
+> - **argument** — the actual value passed when you call the function
+> - **return** — to send a value back from a function to whoever called it
+> - **scope** — the part of the code where a variable is visible
+> - **local** — visible only inside the function it was declared in
+> - **global** — visible everywhere in the script
+> - **hoisting** — JScript's habit of moving declarations to the top of their scope before executing
+> - **header comment** — a `/* ... */` block above a function describing what it does
 
 A **function** is a reusable, named block of code. You define it once and call it as many times as you need.
 
@@ -359,6 +412,18 @@ showAll("a", "b", "c");
 
 ## Lesson 2.3: Arrays
 
+> **New words in this lesson**
+>
+> - **array** — an ordered list of values
+> - **index** — the position of an item in an array, starting at `0`
+> - **length** — how many items are in an array
+> - **push** — add to the end
+> - **pop** — remove from the end (and return what was removed)
+> - **unshift** — add to the start
+> - **shift** — remove from the start (and return what was removed)
+> - **slice** — copy a range of items into a new array
+> - **iterate** — to loop over each item
+
 An **array** is an ordered list of values. JScript arrays can hold any types — strings, numbers, booleans, even other arrays — though in practice you usually use one type per array.
 
 ### Creating and reading arrays
@@ -483,6 +548,15 @@ There's also an `.indexOf` shortcut — guaranteed available in our environment 
 ---
 
 ## Lesson 2.4: String methods
+
+> **New words in this lesson**
+>
+> - **method** — a function attached to a value, called with a dot (like `.length` or `.indexOf` on a string)
+> - **character** — a single letter, digit, or symbol within a string
+> - **immutable** — can't be changed (strings can't be modified after creation; methods return new strings instead)
+> - **substring** — a portion of a string
+> - **split** — break a string into an array of pieces
+> - **escape sequence** — a special character combination starting with `\`, like `\n` for newline
 
 You already know how to make and concatenate strings. JScript provides a rich set of **methods** — built-in functions attached to every string — for working with text.
 
@@ -646,6 +720,14 @@ Forgetting to escape backslashes in Windows paths is the most common mistake. `"
 
 ## Lesson 2.5: Math and number conversion
 
+> **New words in this lesson**
+>
+> - **parse** — to read text and convert it into another type (usually a number)
+> - **radix** — the number base (10 for normal numbers, 16 for hexadecimal, etc.)
+> - **NaN** — "Not a Number," what you get from a failed number conversion
+> - **conversion** — turning a value of one type into another type
+> - **constant** — a fixed value that never changes (like `Math.PI`)
+
 JScript provides a `Math` object with number-related functions, plus a few global functions for converting between strings and numbers.
 
 ### Common `Math` methods
@@ -770,6 +852,14 @@ The parentheses around `(42)` and `(255)` are needed because `.toString` directl
 
 ## Lesson 2.6: Error handling — `try` / `catch`
 
+> **New words in this lesson**
+>
+> - **error** — something going wrong while the script is running
+> - **throw** — to raise an error from your own code
+> - **try/catch** — a structure that handles errors instead of letting the script crash
+> - **finally** — a block that always runs after `try`/`catch`, whether or not there was an error
+> - **propagate** — when an error you don't catch keeps moving "up" through your code until something does
+
 When something goes wrong at runtime — a function gets bad input, a file doesn't exist, a number conversion fails — JScript "throws" an **error**. By default, an unhandled error halts the script and prints a message. Often you want to handle it instead.
 
 ### The basic structure
@@ -884,6 +974,14 @@ Otherwise, let the error propagate. A loud crash is easier to fix than a silent 
 
 ## Lesson 2.7: Reading script arguments
 
+> **New words in this lesson**
+>
+> - **command-line argument** — a value passed to a script when you run it (the things after the script name in `cscript myscript.js a b c`)
+> - **collection** — a list-like group of values (similar to an array, but provided by COM)
+> - **named argument** — an argument written with a name, like `/input:foo.txt`
+> - **positional argument** — an argument identified by where it appears, not by name
+> - **exit code** — a number a script returns when it ends; `0` means success, anything else means failure
+
 Most of our utility scripts take inputs from the command line — a filename, a flag, a number. JScript exposes these through `WScript.Arguments`.
 
 ### The `WScript.Arguments` collection
@@ -962,6 +1060,17 @@ WSH actually splits arguments into two collections — `WScript.Arguments.Named`
 ---
 
 ## Lesson 2.8: Introducing `baseline`
+
+> **New words in this lesson**
+>
+> - **baseline** — a tool that translates modern JavaScript into older JScript that WSH can run
+> - **transpiler** — a tool that translates code from one form of a language to another
+> - **modern syntax** / **modern JavaScript** — newer features (after 2015) like `let`, `const`, arrow functions, template literals
+> - **arrow function** — a compact function syntax: `(x) => x + 1`
+> - **template literal** — a string written in backticks with values inserted using `${...}`
+> - **default parameter** — a parameter with a fallback value used if no argument is passed
+> - **block-scoped** — visible only inside the `{ ... }` block where it's declared
+> - **function-scoped** — visible everywhere inside the enclosing function
 
 You've been learning JScript-as-the-engine-runs-it: `var`, `function`, ES3 syntax. From this lesson on, the codebase you'll be reading uses **modern JavaScript** — `let`, `const`, arrow functions, template literals, destructuring, and more.
 

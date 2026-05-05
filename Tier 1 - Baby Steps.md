@@ -1,15 +1,10 @@
 # JScript at Work — Tier 1: Baby Steps
 
-Welcome. This is the first of four tutorial files that will take you from "what's a variable?" to confidently maintaining the JScript codebase you're inheriting. The four tiers are:
-
-1. **Baby Steps** (you are here): What this is, how to run scripts, basic vocabulary.
-2. **Beginner**: Real programming — control flow, functions, working with text and lists.
-3. **Intermediate**: Talking to the system — files, processes, modern syntax via `baseline`.
-4. **Semi-Advanced**: Reading and modifying production code, including `baseline` itself.
+Welcome. This is the first of four tutorial files that will take you from "what's a variable?" to confidently maintaining the JScript codebase you're inheriting.
 
 Take your time. Do the exercises. Ask questions when you're stuck — that's much faster than spinning your wheels.
 
-> **A note on the environment:** the machines you'll be working on are air-gapped — no internet access by design. That means no Stack Overflow, no `npm install`, no live documentation on the dev box. This tutorial is written to be self-contained, but expect to keep notes (or use a separate connected machine) when you want to look something up. When you hit a wall, ask — that's faster than guessing in the dark anyway.
+> **A note on the environment:** the machines you'll be working on are air-gapped — no internet access by design. That means no Stack Overflow, no live documentation on the dev box. This tutorial is written to be self-contained, but expect to keep notes (or use a separate connected machine) when you want to look something up. When you hit a wall, ask — that's faster than guessing in the dark anyway.
 
 ---
 
@@ -17,7 +12,7 @@ Take your time. Do the exercises. Ask questions when you're stuck — that's muc
 
 - What WSH and JScript actually are, and why we use them
 - How to run a script
-- Variables, basic types, simple operators
+- Variables and basic types
 - Output (`WScript.Echo`)
 - Comments
 - Basic conditionals (`if` / `else`)
@@ -28,22 +23,35 @@ By the end you should be able to write a 10–20 line script that prints somethi
 
 ## Lesson 1.1: What is WSH/JScript?
 
+> **New words in this lesson**
+>
+> - **JScript** — Microsoft's version of JavaScript
+> - **WSH** — Windows Script Host, the program that runs JScript files
+> - **runtime** — the program that actually executes your code (in our case, WSH)
+
 Let's get vocabulary straight first.
 
 **JScript** is Microsoft's version of JavaScript. Yes, JavaScript — the same language family that runs in web browsers. But:
 
-1. **It's old.** JScript implements roughly the JavaScript standard from 1999 (called *ES3*), plus a few features from 2009 (*ES5*). Most of the modern JavaScript you'll find online — `let`, `const`, arrow functions, classes — **does not work in plain JScript**. We get around this with a tool called `baseline`, which we'll meet in Tier 2.
+1. **It's old.** JScript follows an old version of JavaScript. If you find tutorials online with newer features, those may not work in JScript. Stick with what's in this tutorial.
 2. **It's local.** JScript doesn't run in a browser. It runs on your Windows machine, with full access to files, processes, and Windows itself.
 
 **WSH** stands for **Windows Script Host**. It's the program that actually executes JScript files. It comes pre-installed on every Windows machine — that universality is a big reason we use this stack. We can deploy our scripts anywhere without installing anything.
 
-You'll hear "JScript" and "WSH" used somewhat interchangeably. Strictly: WSH is the runtime, JScript is the language. Comparable to Node.js vs JavaScript, but Microsoft.
+You'll hear "JScript" and "WSH" used somewhat interchangeably. Strictly: WSH is the runtime, JScript is the language.
 
-**Why are we still using this?** Honestly: it works, it's universal on Windows, zero install footprint, and a lot of our automation predates better alternatives. When you're reading our code, treat the WSH/JScript constraint as permanent — we're not migrating off it.
+**Why are we still using this?** Honestly: it works, it's universal on Windows, zero install footprint, and a lot of our automation predates better alternatives. Treat the WSH/JScript constraint as permanent — we're not migrating off it.
 
 ---
 
 ## Lesson 1.2: Running your first script
+
+> **New words in this lesson**
+>
+> - **script** — a file of code that gets run from top to bottom
+> - **console** — the text-based command-line window (`cmd`)
+> - **method** — a function attached to an object (like `Echo` on `WScript`)
+> - **argument** — a value you pass into a function or method when you call it
 
 Open whatever text editor is available on the machine. Notepad works fine; if Notepad++ is installed, that's nicer. Type this exactly:
 
@@ -87,7 +95,7 @@ A dialog box pops up with "Hello, world!" and an OK button.
 - **`cscript`** runs the script in console mode. `WScript.Echo` prints to the terminal. This is what we use during development and for anything called from a command prompt or batch file.
 - **`wscript`** runs the script in window mode. `WScript.Echo` opens a dialog. This is what end users see when they double-click a `.js` file in Windows Explorer — which is why double-clicking a script can be surprising. It'll start popping up dialogs.
 
-For our work you'll almost always use `cscript`. There's a way to make it the default for `.js` files; we'll cover that later. For now, just remember to type it.
+For our work you'll almost always use `cscript`.
 
 ### What just happened?
 
@@ -111,6 +119,17 @@ Save your work in `C:\jscript-tutorial\` or wherever feels right.
 
 ## Lesson 1.3: Variables and types
 
+> **New words in this lesson**
+>
+> - **variable** — a named place to store a value
+> - **declare** — to introduce a new variable for the first time
+> - **value** — the actual data: a number, some text, true/false, etc.
+> - **type** — what kind of value something is
+> - **literal** — a value written directly in code, like `5` or `"hello"`
+> - **string** — text
+> - **boolean** — a value that's either `true` or `false`
+> - **camelCase** — a naming style: lowercase first word, capital first letter on each subsequent word
+
 A **variable** is a named container that holds a value. In JScript, you declare one with the keyword `var`:
 
 ```js
@@ -120,8 +139,6 @@ var isOnTheTeam = true;
 ```
 
 Three variables. Each has a name, a value, and (implicitly) a type.
-
-**Note on style:** Our codebase uses `var` only in the *output* — code that runs directly on WSH/JScript. The *source code* of our transpilers uses `let` and `const`, which get transformed into `var` for output. You're learning JScript-as-the-engine-runs-it first, so we're using `var`. Modern keywords come in Tier 2.
 
 ### Naming rules
 
@@ -134,34 +151,62 @@ A variable name:
 
 Conventions matter beyond the rules. Use meaningful names — `customerCount`, not `cc`. Style guide is `camelCase` for variables and functions, which means start lowercase and capitalize each subsequent word: `firstName`, `totalRevenue`.
 
-### The basic types
+### Types and literals
 
-We'll use three of JScript's primitive types in Tier 1.
+A **value** in JScript has a **type**. When you write a value directly in your code — a `5` or a `"hello"` — that's called a **literal**. There are visual rules for writing literals of different types.
 
-**Strings** — text in quotes. The codebase uses both single and double quotes for different purposes; we'll cover that distinction in Tier 2. For now, use **double quotes** for the user-facing text we're writing.
+**Strings** — text — go inside double quotes.
 
 ```js
 var greeting = "Hello, world!";
+var name = "Sam";
 ```
 
-**Numbers** — JScript has one number type. No separate integer/float; `5` and `5.0` are the same value.
+**Numbers** — go without quotes. JScript has one number type for both whole numbers and decimals.
 
 ```js
 var count = 42;
 var price = 19.99;
 ```
 
-**Booleans** — `true` or `false`. That's it.
+**Booleans** — the bare words `true` and `false`. No quotes.
 
 ```js
 var isActive = true;
 var isFinished = false;
 ```
 
-Two more primitives worth knowing about:
+Two more bare-word values you'll occasionally see:
 
-- `undefined` — what a variable holds if you declared it but didn't assign anything: `var x;` leaves `x` as `undefined`. *Heads-up: in our codebase you'll see `void null` used instead of the bare word `undefined`. There's a real reason for this — we'll cover it in Tier 2.*
-- `null` — an explicit "nothing here" value: `var y = null;`. The difference: `undefined` is the default emptiness, `null` is intentional emptiness.
+- `undefined` — what a variable holds if you declared it but didn't assign anything: `var x;` leaves `x` as `undefined`.
+- `null` — an explicit "nothing here" value: `var y = null;`.
+
+### Quotes vs no quotes — why it matters
+
+The quoting rule isn't decoration. It's how JScript tells what you mean.
+
+Look carefully at these — the differences are critical:
+
+```js
+"hello"   // a string — the five letters h, e, l, l, o
+hello     // a name — JScript looks for a variable called "hello"
+42        // a number — the value forty-two
+"42"      // a string — the two characters 4 and 2
+true      // a boolean — the value true
+"true"    // a string — the four letters t, r, u, e
+```
+
+If you write `"True"` when you mean `true`, you've created a string of four letters, not a boolean. They behave differently.
+
+If you write `john` when you mean `"John"`, JScript will look for a variable called `john` and complain that it doesn't exist.
+
+The most common beginner mistakes:
+
+- **Forgetting quotes around a string.** `var name = John;` should be `var name = "John";`
+- **Adding quotes around a boolean.** `var isActive = "true";` is a string of four letters, not a boolean.
+- **Adding quotes around a number when you want math.** `"5" + "3"` is `"53"` (a string), not `8` (a number).
+
+When in doubt, ask: "Is this *text* I want to display, or is this a *name* I want JScript to look up, or is this a *number* I want to compute with?" Quotes go around text. Names don't get quotes. Numbers don't get quotes.
 
 ### Inspecting types with `typeof`
 
@@ -194,12 +239,27 @@ You only use `var` once — when you first declare the variable. After that, pla
 
 1. **Three variables.** Declare three variables: your name (string), your age (number), and whether you've had coffee today (boolean). `Echo` each.
 2. **Type inspection.** For each variable above, also `Echo` its `typeof`. Confirm you get `"string"`, `"number"`, `"boolean"`.
-3. **The null gotcha.** Declare `var nothing = null;` and `var notSet;` (no value). `Echo` `typeof` for both. Confirm which one returns `"object"`.
-4. **Reassignment across types.** Declare `var x = 1;`. `Echo` it. Reassign `x = "one";`. `Echo` again. JScript doesn't care that you changed the type — variables are not locked to their original type. (This flexibility is a foot-gun; we'll address it later.)
+3. **Quote-quiz.** Predict the output of each of these *before* running. Then run a script with all of them and see how you did.
+   ```js
+   WScript.Echo(typeof "42");
+   WScript.Echo(typeof 42);
+   WScript.Echo(typeof "true");
+   WScript.Echo(typeof true);
+   ```
+4. **The null gotcha.** Declare `var nothing = null;` and `var notSet;` (no value). `Echo` `typeof` for both. Confirm which one returns `"object"`.
+5. **Reassignment across types.** Declare `var x = 1;`. `Echo` it. Reassign `x = "one";`. `Echo` again. JScript doesn't care that you changed the type — variables are not locked to their original type.
 
 ---
 
 ## Lesson 1.4: Operators
+
+> **New words in this lesson**
+>
+> - **operator** — a symbol that combines or transforms values, like `+` or `*`
+> - **arithmetic** — math
+> - **concatenation** — joining two strings (text values) together
+> - **modulo** — the remainder after division
+> - **strict equality** — checking equality without converting types
 
 An **operator** combines or transforms values. You already know `+` from math; JScript has more.
 
@@ -215,9 +275,9 @@ var remainder = 17 % 5;  // 2
 
 `%` is *modulo* (or "remainder"). `17 % 5` is `2` because `17 / 5` is `3` with `2` left over. Useful for "every Nth thing" logic.
 
-### String concatenation
+### String concatenation (joining text)
 
-`+` also joins strings:
+`+` also joins strings — this is called **concatenation**:
 
 ```js
 var first = "John";
@@ -252,7 +312,7 @@ Equality has two forms, and the difference is critical:
 5 === "5"   // false  — strict equality, types must match
 ```
 
-**Always use `===` and `!==`.** The loose `==` and `!=` operators do "helpful" type conversions that are mostly unhelpful. You'll see `==` in legacy parts of our codebase; new code uses `===`.
+**Always use `===` and `!==`.** The loose `==` and `!=` operators do unhelpful type conversions.
 
 ### Logical
 
@@ -265,36 +325,21 @@ true  || false   // true   — OR:  at least one must be true
 
 These are most useful inside conditionals, which we'll cover next lesson.
 
-### Assignment shortcuts
-
-```js
-var x = 10;
-x += 5;  // same as x = x + 5;  → 15
-x -= 3;  // same as x = x - 3;  → 12
-x *= 2;  // → 24
-x /= 4;  // → 6
-```
-
-And `++` (add 1), `--` (subtract 1) — by style guide, prefer the **prefix** form (`++n`, `--n`):
-
-```js
-var n = 5;
-++n;     // n is now 6
---n;     // n is back to 5
-```
-
-There's a postfix form (`n++`, `n--`) that you'll see occasionally — it has subtly different evaluation timing when used inside larger expressions. We'll get into that in a later tier. For now, prefix is the safer default.
-
 ### Exercises
 
 1. **Math practice.** Declare two number variables and `Echo` their sum, difference, product, and quotient.
 2. **The concatenation trap.** Predict the output of `WScript.Echo(1 + 2 + "3" + 4 + 5);` *before* running it. Then run it. Walk through left-to-right to understand why.
 3. **Strict equality.** Echo the results of `5 == "5"`, `5 === "5"`, `0 == false`, and `0 === false`. Convince yourself why strict is the safer default.
-4. **Compound assignment.** Start with `var n = 100;`. Apply `n -= 25;`, then `n /= 5;`, then `n *= 2;`. Echo `n` after each step. (Final answer: 30.)
+4. **Build a sentence.** Declare three variables: a string for someone's name, a number for their age, and a boolean for whether they're a student. Build and `Echo` a single sentence using all three values via concatenation, like `"Sam is 34 years old. Student: true."` (don't worry about formatting the boolean nicely; let JScript turn it into a string for you).
 
 ---
 
 ## Lesson 1.5: Comments
+
+> **New words in this lesson**
+>
+> - **comment** — a note for humans that JScript ignores
+> - **block comment** — a multi-line comment using `/* ... */`
 
 Comments are notes for human readers. JScript ignores them.
 
@@ -319,8 +364,6 @@ var total = 0; // set total to zero
 var total = 0; // accumulator for the daily revenue loop below
 ```
 
-You'll see a special form of block comment in our codebase: `/** ... */` (note the double asterisk on the opening). That's a **JSDoc** comment, used for documenting functions. We'll cover JSDoc properly in Tier 2; for now, just recognize it when you see it.
-
 ### Exercises
 
 1. **Self-documenting script.** Take your three-variables script from Lesson 1.3 and add a comment above each variable explaining what it represents.
@@ -330,6 +373,15 @@ You'll see a special form of block comment in our codebase: `/** ... */` (note t
 ---
 
 ## Lesson 1.6: Conditionals — `if` / `else`
+
+> **New words in this lesson**
+>
+> - **conditional** — code that runs only when a condition is true
+> - **expression** — anything that produces a value
+> - **branch** — one of the possible paths an `if` / `else if` / `else` chain can take
+> - **truthy** — a value that counts as `true` in a conditional
+> - **falsy** — a value that counts as `false` in a conditional
+> - **coerce** — to automatically convert one type to another
 
 A **conditional** runs different code depending on whether something is true.
 
@@ -405,13 +457,11 @@ The expression in `if(...)` doesn't have to literally be `true` or `false`. JScr
 - `""` (the empty string)
 - `null`
 - `undefined`
-- `NaN` (a special "not a number" value — we'll meet it in Tier 2)
 
 Every other value is **truthy**, including:
 
 - Any non-zero number (positive *or* negative)
 - Any non-empty string — even `"false"`, because it's a non-empty string
-- Any object, array, or function, even empty ones (`{}`, `[]`)
 
 This is convenient, but it's also a bug source:
 
@@ -472,17 +522,6 @@ You now know enough JScript to write small scripts that:
 
 That's a real skill. Every script in our codebase is built from these same pieces — just with more layers on top.
 
-### What's next
-
-In **Tier 2: Beginner** we'll cover:
-
-- Loops — making the script repeat work
-- Functions — bundling code into reusable pieces
-- Arrays — storing lists of things
-- String methods — manipulating text properly
-- Error handling — what to do when something goes wrong
-- An introduction to `baseline` and the modern syntax we use day-to-day
-
 ### Capstone exercise
 
 Write a single script that does all of this:
@@ -491,6 +530,6 @@ Write a single script that does all of this:
 2. Prints the age.
 3. Prints their life stage: `"minor"` (under 18), `"adult"` (18–64), or `"senior"` (65+).
 4. Includes a comment block at the top describing what the script does.
-5. Uses meaningful variable names and follows the style conventions you've learned: double quotes for user-facing strings, `if(...)` with no space, semicolons everywhere, prefix `++`/`--`.
+5. Uses meaningful variable names and follows the style conventions you've learned: double quotes for user-facing strings, `if(...)` with no space, semicolons everywhere.
 
 It should land around 10–15 lines. When you can write this without referring back to the lessons, Tier 1 is complete.
