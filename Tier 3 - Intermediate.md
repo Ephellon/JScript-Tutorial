@@ -7,9 +7,9 @@ What we'll cover:
 - **Template literals** — proper coverage now that we're committed to modern syntax
 - **Objects** — key/value structures, the foundation of larger code
 - **Classes** — bundled state and behavior
+- **Date and time** — JScript's `Date` and the manual formatting you'll need
 - **FileSystemObject** — reading, writing, listing files
 - **WScript.Shell** — running commands, environment variables, capturing output
-- **Date and time** — JScript's `Date` and the manual formatting you'll need
 - **Regular expressions** — pattern matching for text
 - **Modules** — splitting code across files via `import`/`export`
 - **Argument parsing** — named vs positional, building parsed-args objects
@@ -17,11 +17,20 @@ What we'll cover:
 
 The capstone for Tier 3 is a real maintenance script — file processing, error handling, structured output. The kind of thing that earns its place in the toolkit folder.
 
-From here on, examples use modern syntax. If you see something unfamiliar, check Lesson 2.8 or the relevant section ahead.
+From here on, examples use modern syntax. If you see something unfamiliar, check Lesson 2.8.
 
 ---
 
 ## Lesson 3.1: Template literals — a closer look
+
+> **New words in this lesson**
+>
+> - **template literal** — a string written between backticks (`` ` ``) instead of regular quotes
+> - **interpolation** — inserting a value into a string with `${...}`
+> - **backtick** — the `` ` `` character (not the same as a single quote)
+> - **expression** — anything that produces a value (a number, a calculation, a function call, etc.)
+> - **ternary** — the `condition ? a : b` shortcut for if/else
+> - **escape** — using `\` to include a special character literally
 
 You met template literals in Lesson 2.8 — backtick strings with `${}` interpolation. We're covering them properly now, since the rest of Tier 3 leans on them heavily.
 
@@ -150,17 +159,6 @@ Stick with a regular string when:
 
 In the codebase, you'll find templates everywhere code is being constructed: error messages, generated source, formatted reports, log lines, and CLI banners.
 
-### Tagged templates — exists, deferred
-
-There's a more advanced form called **tagged templates** that lets you preprocess a template's parts through a function:
-
-```js
-function tag(strings, ...values) { /* ... */ }
-const result = tag`Hello, ${name}!`;
-```
-
-You may see them in the codebase in specialized places (HTML escaping, SQL building, etc.). For now, treat them as "yes, that's a thing" and continue. We won't use them in this tier.
-
 ### Exercises
 
 1. **Greeting upgrade.** Take any `Echo` from Tier 2 that used `+` concatenation to insert a value, and rewrite it as a template literal. Run both versions to confirm identical output.
@@ -172,6 +170,24 @@ You may see them in the codebase in specialized places (HTML escaping, SQL build
 ---
 
 ## Lesson 3.2: Objects
+
+> **New words in this lesson**
+>
+> - **object** — a collection of named values (key/value pairs)
+> - **property** — one named value inside an object
+> - **key** — the name half of a property
+> - **value** — the data half of a property
+> - **method** — a function attached to an object
+> - **`this`** — a special variable that refers to the current object inside a method
+> - **reference** — a "pointer" to an object; copying a reference doesn't copy the object itself
+> - **lookup table** — an object used to look up values by name
+> - **prototype chain** — JScript's internal mechanism for inheritance (you can mostly ignore it)
+> - **destructuring** — pulling values out of an object/array into separate variables in one statement
+> - **spread** — unpacking an array or object inline using `...`
+> - **rest** — collecting remaining items into an array using `...`
+> - **shallow merge** — copying only top-level properties; nested objects stay shared
+> - **optional chaining** — safely reading nested properties using `?.`
+> - **nullish coalescing** — providing a default with `??` only when something is `null`/`undefined`
 
 An **object** is a collection of key-value pairs, also called **properties**. Where an array is an ordered list, an object is a labeled bag. Use objects when each piece of data has a distinct name (a person's `name`, `age`, `email`); use arrays when each piece is just one of many of the same kind.
 
@@ -304,7 +320,7 @@ dog.introduce(); // Hi, I'm Rex.
 `this` works as expected in:
 
 - Object methods called via `obj.method()`
-- Class methods (next lesson)
+- Class methods (Lesson 3.3)
 - Regular `function` declarations called appropriately
 
 `this` does **not** work the same way in arrow functions — an arrow function inherits `this` from the surrounding scope, not the object it's attached to. Sometimes useful, sometimes a footgun. Rule of thumb: use regular `function` (or method shorthand) for object methods, arrow functions for everything else.
@@ -639,6 +655,15 @@ WScript.Echo(config.fontSize); // 14
 
 ## Lesson 3.3: Classes
 
+> **New words in this lesson**
+>
+> - **class** — a template for creating objects with shared structure and behavior
+> - **constructor** — the function that runs when you create a new instance with `new`
+> - **instance** — one specific object created from a class
+> - **inheritance** — when one class extends another, gaining its properties and methods
+> - **`super`** — refers to the parent class
+> - **static method** — a method belonging to the class itself, not to instances
+
 A **class** is a template for objects with shared structure and behavior. Where an object literal is one specific thing, a class is a recipe for making things of that kind.
 
 ### Class declaration
@@ -799,7 +824,191 @@ For one-off groupings of data with no behavior, prefer plain object literals. Fo
 
 ---
 
-## Lesson 3.4: Working with files — FileSystemObject
+## Lesson 3.4: Date and time
+
+> **New words in this lesson**
+>
+> - **`Date` object** — JScript's built-in type for representing a moment in time
+> - **timestamp** — a date represented as a single number (milliseconds since 1970)
+> - **epoch** — the fixed reference point dates are measured from (Jan 1, 1970, UTC)
+> - **UTC** — Coordinated Universal Time, a global timezone-independent reference
+> - **locale** — region-specific formatting conventions (don't trust them)
+> - **ISO 8601** — an international date-format standard (`YYYY-MM-DD`)
+> - **overflow** — when a date component goes past its normal range and wraps (e.g., month `13` becomes January of the next year)
+
+JScript has a `Date` object for working with timestamps. It's the same `Date` you'd see in any JavaScript environment — but with one big caveat: WSH JScript's date *formatting* methods are locale-dependent and unreliable, so we usually format manually.
+
+### Creating a Date
+
+```js
+const now      = new Date();                    // current date and time
+const epoch    = new Date(0);                   // Unix epoch (Jan 1, 1970, UTC)
+const specific = new Date(2024, 5, 15, 14, 30); // Year, month (0-based!), day, hour, minute
+```
+
+**Critical gotcha:** the `month` argument is **zero-indexed**. January is `0`, December is `11`. The `day` argument is one-indexed. So `new Date(2024, 5, 15)` is **June 15**, not May.
+
+You can also parse from a string, but parsing is wildly inconsistent across JavaScript engines. Avoid it; construct dates explicitly when you can.
+
+### Reading components
+
+```js
+const d = new Date(2024, 5, 15, 14, 30, 45);
+
+WScript.Echo(d.getFullYear()); // 2024
+WScript.Echo(d.getMonth());    // 5 (June, zero-indexed)
+WScript.Echo(d.getDate());     // 15 (day of month)
+WScript.Echo(d.getDay());      // 6 (day of week — Saturday, where 0 = Sunday)
+WScript.Echo(d.getHours());    // 14
+WScript.Echo(d.getMinutes());  // 30
+WScript.Echo(d.getSeconds());  // 45
+```
+
+`getMonth()` returns `0`–`11`. `getDay()` returns `0`–`6` (with `0` = Sunday). Both are common sources of confusion.
+
+There are UTC variants — `getUTCFullYear`, `getUTCMonth`, etc. — that return components in UTC instead of local time.
+
+### Timestamps
+
+`d.getTime()` returns the date as a number — milliseconds since the Unix epoch:
+
+```js
+const d = new Date();
+WScript.Echo(d.getTime()); // e.g., 1734345600000
+```
+
+Useful for:
+
+- **Comparing dates.** `dateA.getTime() < dateB.getTime()` reliably tells you which came first.
+- **Date math.** Subtract two timestamps to get the difference in milliseconds.
+- **Storage.** A timestamp is a single number; easy to log or persist.
+
+```js
+const a = new Date(2024, 0, 1);
+const b = new Date(2024, 0, 15);
+
+const diffMs = b.getTime() - a.getTime();
+const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+WScript.Echo(`${diffDays} days apart.`); // 14 days apart.
+```
+
+### Don't trust `.toString()`, `.toLocaleString()`, etc.
+
+The Date object has built-in formatting methods:
+
+```js
+const d = new Date();
+WScript.Echo(d.toString());       // varies wildly by environment
+WScript.Echo(d.toLocaleString()); // depends on locale settings
+```
+
+In WSH JScript these are unreliable. The output format depends on regional settings, the Windows version, and sometimes seemingly the phase of the moon. **Don't use them** for any output that needs to be parseable or consistent.
+
+### Manual formatting — the standard pattern
+
+Build the format string yourself from components:
+
+```js
+/*
+ * formatDate
+ * Formats a Date as YYYY-MM-DD HH:MM:SS in local time.
+ *
+ * Input:  d (Date)
+ * Output: string in YYYY-MM-DD HH:MM:SS format
+ */
+function formatDate(d) {
+    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+
+    const yyyy = d.getFullYear();
+    const mm   = pad(d.getMonth() + 1); // +1 to undo zero-indexing
+    const dd   = pad(d.getDate());
+    const hh   = pad(d.getHours());
+    const mi   = pad(d.getMinutes());
+    const ss   = pad(d.getSeconds());
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+WScript.Echo(formatDate(new Date())); // 2025-04-12 14:30:45
+```
+
+The `pad` helper turns `9` into `"09"`. The `+1` on the month corrects for zero-indexing.
+
+This — or some variant — is the reliable way to format a date in our codebase. ISO 8601 (`YYYY-MM-DD`) is the safe default since it sorts lexically as well as chronologically and parses correctly in any environment.
+
+### Modifying dates
+
+Set components individually:
+
+```js
+const d = new Date();
+d.setFullYear(2030);
+d.setMonth(0); // January
+d.setDate(1);
+```
+
+Date components also overflow — setting month to `13` advances the year:
+
+```js
+const d = new Date(2024, 11, 1); // Dec 1, 2024
+d.setMonth(d.getMonth() + 1);    // overflows to Jan 1, 2025
+WScript.Echo(formatDate(d));
+```
+
+This is occasionally what you want. More often it's a bug. Be deliberate.
+
+### Common date patterns
+
+Yesterday:
+
+```js
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+```
+
+N days ago:
+
+```js
+function nDaysAgo(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+
+    return d;
+}
+```
+
+Difference in days:
+
+```js
+function daysBetween(a, b) {
+    const diffMs = Math.abs(b.getTime() - a.getTime());
+
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+```
+
+### Exercises
+
+1. **Today's stamp.** Write a script that prints today's date as `YYYY-MM-DD` using the manual formatting pattern.
+2. **Format helper.** Implement `formatDate(d)` exactly as shown above (with header comment), then use it to print the current time three times in a row separated by `WScript.Sleep(1000)` calls. (`WScript.Sleep` pauses for the given milliseconds — handy for testing date logic.)
+3. **Days until.** Write a function `daysUntil(year, month, day)` (with header comment, and remember the month is zero-indexed in `Date`) that returns the number of days from today until that date. Test with a date in the future and a date in the past (negative result expected for past dates).
+4. **Yesterday's log.** Write a script that opens (or creates) `C:\\daily.log` and appends a single line: `[<timestamp>] running on <username>`, using `formatDate` and `WScript.Shell` for the username.
+
+---
+
+## Lesson 3.5: Working with files — FileSystemObject
+
+> **New words in this lesson**
+>
+> - **COM** — Component Object Model; Windows' way of letting programs talk to each other
+> - **`ActiveXObject`** — JScript's way of creating COM components
+> - **progID** — the program identifier string for a COM component (like `"Scripting.FileSystemObject"`)
+> - **`FileSystemObject` (FSO)** — the COM component for working with files and folders
+> - **stream** — a flowing sequence of data; used here for reading or writing a file
+> - **iomode** — a number telling the file system whether to read, write, or append (1 / 2 / 8)
+> - **`Enumerator`** — JScript's adapter for iterating over a COM collection (which isn't a regular array)
+> - **path operations** — utilities for splitting and joining file paths
 
 A lot of our utility scripts read or write files: log filters, report generators, file renamers, data ingesters. JScript exposes file system access through a COM object called the **FileSystemObject** (FSO).
 
@@ -897,8 +1106,6 @@ const stream = fso.OpenTextFile("C:\\app.log", 8, true);
 stream.WriteLine(`[${new Date()}] Script ran`);
 stream.Close();
 ```
-
-(We'll cover `new Date()` properly in Lesson 3.6 — for now, just know it produces a current-time stamp.)
 
 The `true` create-if-missing flag ensures the first run doesn't fail.
 
@@ -1031,7 +1238,19 @@ For destructive operations (`DeleteFile`, `DeleteFolder`), get into the habit of
 
 ---
 
-## Lesson 3.5: Running commands and reading the environment
+## Lesson 3.6: Running commands and reading the environment
+
+> **New words in this lesson**
+>
+> - **Shell** — `WScript.Shell`, the COM object for running commands and reading the environment
+> - **environment variable** — a named value the OS makes available (like `USERNAME` or `PATH`)
+> - **`Run`** — fire off a command, optionally waiting for it to finish
+> - **`Exec`** — run a command and capture its output
+> - **stdout** — standard output, where a program writes its normal output
+> - **stderr** — standard error, where a program writes error messages
+> - **exit code** — a number a program returns when it ends; `0` means success
+> - **redirection** — sending output into a file with `>` or piping it with `|`
+> - **special folder** — a well-known system folder (Desktop, Documents, etc.)
 
 For invoking other programs, reading environment variables, and accessing system folders, JScript uses the **Shell** COM object — `WScript.Shell`.
 
@@ -1210,170 +1429,22 @@ A good template for shelling out from a script — gives you the output on succe
 
 ---
 
-## Lesson 3.6: Date and time
-
-JScript has a `Date` object for working with timestamps. It's the same `Date` you'd see in any JavaScript environment — but with one big caveat: WSH JScript's date *formatting* methods are locale-dependent and unreliable, so we usually format manually.
-
-### Creating a Date
-
-```js
-const now      = new Date();                    // current date and time
-const epoch    = new Date(0);                   // Unix epoch (Jan 1, 1970, UTC)
-const specific = new Date(2024, 5, 15, 14, 30); // Year, month (0-based!), day, hour, minute
-```
-
-**Critical gotcha:** the `month` argument is **zero-indexed**. January is `0`, December is `11`. The `day` argument is one-indexed. So `new Date(2024, 5, 15)` is **June 15**, not May.
-
-You can also parse from a string, but parsing is wildly inconsistent across JavaScript engines. Avoid it; construct dates explicitly when you can.
-
-### Reading components
-
-```js
-const d = new Date(2024, 5, 15, 14, 30, 45);
-
-WScript.Echo(d.getFullYear()); // 2024
-WScript.Echo(d.getMonth());    // 5 (June, zero-indexed)
-WScript.Echo(d.getDate());     // 15 (day of month)
-WScript.Echo(d.getDay());      // 6 (day of week — Saturday, where 0 = Sunday)
-WScript.Echo(d.getHours());    // 14
-WScript.Echo(d.getMinutes());  // 30
-WScript.Echo(d.getSeconds());  // 45
-```
-
-`getMonth()` returns `0`–`11`. `getDay()` returns `0`–`6` (with `0` = Sunday). Both are common sources of confusion.
-
-There are UTC variants — `getUTCFullYear`, `getUTCMonth`, etc. — that return components in UTC instead of local time.
-
-### Timestamps
-
-`d.getTime()` returns the date as a number — milliseconds since the Unix epoch:
-
-```js
-const d = new Date();
-WScript.Echo(d.getTime()); // e.g., 1734345600000
-```
-
-Useful for:
-
-- **Comparing dates.** `dateA.getTime() < dateB.getTime()` reliably tells you which came first.
-- **Date math.** Subtract two timestamps to get the difference in milliseconds.
-- **Storage.** A timestamp is a single number; easy to log or persist.
-
-```js
-const a = new Date(2024, 0, 1);
-const b = new Date(2024, 0, 15);
-
-const diffMs = b.getTime() - a.getTime();
-const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-WScript.Echo(`${diffDays} days apart.`); // 14 days apart.
-```
-
-### Don't trust `.toString()`, `.toLocaleString()`, etc.
-
-The Date object has built-in formatting methods:
-
-```js
-const d = new Date();
-WScript.Echo(d.toString());       // varies wildly by environment
-WScript.Echo(d.toLocaleString()); // depends on locale settings
-```
-
-In WSH JScript these are unreliable. The output format depends on regional settings, the Windows version, and sometimes seemingly the phase of the moon. **Don't use them** for any output that needs to be parseable or consistent.
-
-### Manual formatting — the standard pattern
-
-Build the format string yourself from components:
-
-```js
-/*
- * formatDate
- * Formats a Date as YYYY-MM-DD HH:MM:SS in local time.
- *
- * Input:  d (Date)
- * Output: string in YYYY-MM-DD HH:MM:SS format
- */
-function formatDate(d) {
-    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
-
-    const yyyy = d.getFullYear();
-    const mm   = pad(d.getMonth() + 1); // +1 to undo zero-indexing
-    const dd   = pad(d.getDate());
-    const hh   = pad(d.getHours());
-    const mi   = pad(d.getMinutes());
-    const ss   = pad(d.getSeconds());
-
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
-}
-
-WScript.Echo(formatDate(new Date())); // 2025-04-12 14:30:45
-```
-
-The `pad` helper turns `9` into `"09"`. The `+1` on the month corrects for zero-indexing.
-
-This — or some variant — is the reliable way to format a date in our codebase. ISO 8601 (`YYYY-MM-DD`) is the safe default since it sorts lexically as well as chronologically and parses correctly in any environment.
-
-### Modifying dates
-
-Set components individually:
-
-```js
-const d = new Date();
-d.setFullYear(2030);
-d.setMonth(0); // January
-d.setDate(1);
-```
-
-Date components also overflow — setting month to `13` advances the year:
-
-```js
-const d = new Date(2024, 11, 1); // Dec 1, 2024
-d.setMonth(d.getMonth() + 1);    // overflows to Jan 1, 2025
-WScript.Echo(formatDate(d));
-```
-
-This is occasionally what you want. More often it's a bug. Be deliberate.
-
-### Common date patterns
-
-Yesterday:
-
-```js
-const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-```
-
-N days ago:
-
-```js
-function nDaysAgo(n) {
-    const d = new Date();
-    d.setDate(d.getDate() - n);
-
-    return d;
-}
-```
-
-Difference in days:
-
-```js
-function daysBetween(a, b) {
-    const diffMs = Math.abs(b.getTime() - a.getTime());
-
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
-}
-```
-
-### Exercises
-
-1. **Today's stamp.** Write a script that prints today's date as `YYYY-MM-DD` using the manual formatting pattern.
-2. **Format helper.** Implement `formatDate(d)` exactly as shown above (with header comment), then use it to print the current time three times in a row separated by `WScript.Sleep(1000)` calls. (`WScript.Sleep` pauses for the given milliseconds — handy for testing date logic.)
-3. **Days until.** Write a function `daysUntil(year, month, day)` (with header comment, and remember the month is zero-indexed in `Date`) that returns the number of days from today until that date. Test with a date in the future and a date in the past (negative result expected for past dates).
-4. **Yesterday's log.** Write a script that opens (or creates) `C:\\daily.log` and appends a single line: `[<timestamp>] running on <username>`, using `formatDate` and `WScript.Shell` for the username.
-
----
-
 ## Lesson 3.7: Regular expressions
+
+> **New words in this lesson**
+>
+> - **regular expression / regex** — a pattern that describes a set of strings
+> - **pattern** — the rules a regex describes
+> - **match** — a piece of text that fits a pattern
+> - **character class** — a set of characters (like `\d` for any digit)
+> - **quantifier** — how many times something must repeat (`+`, `*`, `?`, `{n}`)
+> - **anchor** — a position match (`^` for start of string, `$` for end)
+> - **group** — parenthesized subpattern
+> - **capture group** — a group whose match can be referenced later
+> - **alternation** — "OR" written as `|`
+> - **flag** — modifier letter after the closing slash (`i`, `g`, `m`)
+> - **greedy / lazy** — match as much / as little as possible
+> - **non-capturing group** — `(?:...)`, groups without a capture slot
 
 A **regular expression** (regex) is a pattern that describes a set of strings. Use them when you need to match, find, validate, or replace text based on shape rather than exact content.
 
@@ -1622,6 +1693,18 @@ A few things to know:
 
 ## Lesson 3.8: Modules — splitting code across files
 
+> **New words in this lesson**
+>
+> - **module** — a separate file with code that can be imported elsewhere
+> - **`export`** — make something available from a file
+> - **`import`** — pull something in from another file
+> - **named export** — exported by name; imported with curly braces
+> - **default export** — the file's "main" export; imported without curly braces
+> - **namespace import** — `import * as X` to grab everything as one object
+> - **re-export** — exposing something from another module without using it locally
+> - **barrel file** — a file (often `index.js`) that re-exports content from sibling files
+> - **circular import** — when two files import from each other (a problem to avoid)
+
 As scripts grow past a few hundred lines, keeping everything in one file gets painful. **Modules** let you split code into separate files and import what you need.
 
 In modern JavaScript — and in our baseline-flavored source — the syntax is `import`/`export`. Baseline transforms these into the right WSH-compatible mechanism behind the scenes.
@@ -1761,7 +1844,7 @@ Under the hood, baseline transforms `import`/`export` into something WSH can run
 Common patterns you'll see:
 
 - **One concept per file.** A `Counter` class lives in `counter.js`. A regex utility lives in `regex.js`. The file name matches what's exported.
-- **A central `globals.js`** for shared constants — the `WINDOW` enum from Lesson 3.5 lives in something like this.
+- **A central `globals.js`** for shared constants — the `WINDOW` enum from Lesson 3.6 lives in something like this.
 - **A barrel `index.js`** at the top of a folder, re-exporting the public stuff so consumers can write `import { X } from "./util/"` instead of remembering which sub-file `X` lives in.
 
 Rule of thumb: if a function is used in only one place, leave it in that file. The moment a second file needs it, lift it out into a module.
@@ -1782,6 +1865,14 @@ For new work, use baseline modules. If you encounter a `.wsf` and need to extend
 ---
 
 ## Lesson 3.9: Argument parsing patterns
+
+> **New words in this lesson**
+>
+> - **named argument** — a CLI argument written as `/key:value`
+> - **positional argument** — an argument identified by where it appears, not by name
+> - **flag** — a boolean argument that's just present or absent
+> - **parsed-args object** — an object that holds the parsed command-line values
+> - **validation** — checking that input is correct before using it
 
 In Lesson 2.7 you met `WScript.Arguments` for reading positional command-line arguments. Real utility scripts often want **named** arguments too — switches like `/input:foo.txt` or flags like `/verbose`. WSH supports both, and they're accessed through separate collections.
 
@@ -1943,6 +2034,19 @@ result.verbose = named.Exists("verbose"); // good
 ---
 
 ## Lesson 3.10: The rest of modern syntax
+
+> **New words in this lesson**
+>
+> - **exponentiation** — raising a number to a power (`2 ** 10` is `1024`)
+> - **`BigInt`** — a polyfilled type for integers too large for normal numbers
+> - **`Symbol`** — a polyfilled type for unique identifiers
+> - **`ES6.typeOf`** — a helper that returns proper type strings (`"bigint"`, `"symbol"`) for polyfilled types
+> - **generator** — a function that can pause and resume (uses `function*` and `yield`)
+> - **`yield`** — pause a generator and produce a value
+> - **lazy sequence** — values produced on demand instead of all at once
+> - **promise** — a placeholder for a value that will arrive later
+> - **`async` / `await`** — syntax for writing promise-based code that reads top-to-bottom
+> - **pipeline operator (`|>`)** — chains expressions left-to-right (non-standard, baseline-only)
 
 You've now used most of baseline's modern syntax. This lesson cleans up the remaining features in roughly the order you're likely to encounter them.
 
@@ -2173,7 +2277,7 @@ The script should:
 
 1. Validate `/path` (required; must exist; must be a directory). Fail with a clear message if missing or invalid.
 2. Walk the directory (top level only — no recursion required) and gather: total file count, total combined size, count by extension, most-recently-modified file, oldest file.
-3. Format the output as a text report containing all of the above. Use the `formatDate` helper from Lesson 3.6 for any timestamps.
+3. Format the output as a text report containing all of the above. Use the `formatDate` helper from Lesson 3.4 for any timestamps.
 4. If `/output` is given, write the report to that path. Otherwise, `Echo` it to the console.
 5. If `/extension` is given (e.g., `.txt`), filter the report to only files with that extension.
 
