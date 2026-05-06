@@ -126,7 +126,7 @@ Save your work in `C:\jscript-tutorial\` or wherever feels right.
 > - **value** — the actual data: a number, some text, true/false, etc.
 > - **type** — what kind of value something is
 > - **literal** — a value written directly in code, like `5` or `"hello"`
-> - **string** — text
+> - **string** — text (a *string* of characters)
 > - **boolean** — a value that's either `true` or `false`
 > - **camelCase** — a naming style: lowercase first word, capital first letter on each subsequent word
 
