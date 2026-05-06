@@ -213,10 +213,10 @@ When in doubt, ask: "Is this *text* I want to display, or is this a *name* I wan
 The `typeof` operator returns a string telling you a value's type:
 
 ```js
-WScript.Echo(typeof "hello");   // "string"
-WScript.Echo(typeof 42);        // "number"
-WScript.Echo(typeof true);      // "boolean"
-WScript.Echo(typeof undefined); // "undefined"
+WScript.Echo(typeof "hello");   // Output is text: "string"
+WScript.Echo(typeof 42);        // Output is text: "number"
+WScript.Echo(typeof true);      // Output is text: "boolean"
+WScript.Echo(typeof undefined); // Output is text: "undefined"
 ```
 
 **Gotcha:** `typeof null` returns `"object"`. This is a 25-year-old bug in the JavaScript standard that nobody can fix without breaking every program ever written. Memorize it as a quirk and move on.
@@ -227,10 +227,10 @@ Variables can change:
 
 ```js
 var score = 0;
-WScript.Echo(score); // 0
+WScript.Echo(score); // Output is a number: 0
 
 score = 10;
-WScript.Echo(score); // 10
+WScript.Echo(score); // Outut is a number: 10
 ```
 
 You only use `var` once — when you first declare the variable. After that, plain `=` reassigns it.
@@ -251,7 +251,45 @@ You only use `var` once — when you first declare the variable. After that, pla
 
 ---
 
-## Lesson 1.4: Operators
+## Lesson 1.4: Comments
+
+> **New words in this lesson**
+>
+> - **comment** — a note for humans that JScript ignores
+> - **block comment** — a multi-line comment using `/* ... */`
+
+Comments are notes for human readers. JScript ignores them.
+
+```js
+// This is a single-line comment.
+var count = 10; // Comments can also follow code.
+
+/*
+   This is a block comment.
+   It can span multiple lines.
+   Useful for longer explanations.
+*/
+```
+
+Use comments to explain *why* you're doing something, not *what* you're doing. The code itself shows what — your comment should add something the code can't say.
+
+```js
+// Bad: explains what the code obviously does
+var total = 0; // set total to zero
+
+// Good: explains why
+var total = 0; // accumulator for the daily revenue loop below
+```
+
+### Exercises
+
+1. **Self-documenting script.** Take your three-variables script from Lesson 1.3 and add a comment above each variable explaining what it represents.
+2. **Commenting out code.** Add a fourth `Echo` line to any script, then comment it out so it doesn't run. Confirm the output drops the fourth line.
+3. **Block comment header.** Add a `/* ... */` block at the top of the script with a one-paragraph description of what the script does.
+
+---
+
+## Lesson 1.5: Operators
 
 > **New words in this lesson**
 >
@@ -331,44 +369,6 @@ These are most useful inside conditionals, which we'll cover next lesson.
 2. **The concatenation trap.** Predict the output of `WScript.Echo(1 + 2 + "3" + 4 + 5);` *before* running it. Then run it. Walk through left-to-right to understand why.
 3. **Strict equality.** Echo the results of `5 == "5"`, `5 === "5"`, `0 == false`, and `0 === false`. Convince yourself why strict is the safer default.
 4. **Build a sentence.** Declare three variables: a string for someone's name, a number for their age, and a boolean for whether they're a student. Build and `Echo` a single sentence using all three values via concatenation, like `"Sam is 34 years old. Student: true."` (don't worry about formatting the boolean nicely; let JScript turn it into a string for you).
-
----
-
-## Lesson 1.5: Comments
-
-> **New words in this lesson**
->
-> - **comment** — a note for humans that JScript ignores
-> - **block comment** — a multi-line comment using `/* ... */`
-
-Comments are notes for human readers. JScript ignores them.
-
-```js
-// This is a single-line comment.
-var count = 10; // Comments can also follow code.
-
-/*
-   This is a block comment.
-   It can span multiple lines.
-   Useful for longer explanations.
-*/
-```
-
-Use comments to explain *why* you're doing something, not *what* you're doing. The code itself shows what — your comment should add something the code can't say.
-
-```js
-// Bad: explains what the code obviously does
-var total = 0; // set total to zero
-
-// Good: explains why
-var total = 0; // accumulator for the daily revenue loop below
-```
-
-### Exercises
-
-1. **Self-documenting script.** Take your three-variables script from Lesson 1.3 and add a comment above each variable explaining what it represents.
-2. **Commenting out code.** Add a fourth `Echo` line to any script, then comment it out so it doesn't run. Confirm the output drops the fourth line.
-3. **Block comment header.** Add a `/* ... */` block at the top of the script with a one-paragraph description of what the script does.
 
 ---
 
