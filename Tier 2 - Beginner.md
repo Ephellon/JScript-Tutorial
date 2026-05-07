@@ -181,9 +181,9 @@ if(i % 13 === 0) {
 
 ### When to use which loop
 
-- **`for`** — when you know the count, or have a clear iteration structure (index from 0 to N, character-by-character scan, etc.)
-- **`while`** — when the loop continues "until something changes" and there's no clean counter
-- **`do...while`** — rarely; only when the body must run at least once
+- **`for`** — when you know the count, or have a clear iteration structure (from X to Y, character-by-character, etc.)
+- **`while`** — when the loop continues "until something changes" and there's no clear ending
+- **`do...while`** — rarely used; only when the while-loop must run at least once
 
 In practice our codebase is mostly `for` loops, with the occasional `while` for character-by-character scanning in the transpilers.
 
