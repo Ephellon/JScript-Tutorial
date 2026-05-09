@@ -29,7 +29,7 @@ The capstone for Tier 2 is a real utility script — small enough to write in on
 > - **infinite loop** — a loop that never stops (a bug)
 > - **label** — a name attached to a loop, used for `break` and `continue`
 > - **break** — exit a loop early
-> - **continue** — skip to the next iteration of a loop
+> - **continue** — skip to the next repetition of a loop
 
 Before we get into loops proper, two operator shortcuts that show up everywhere from this point on — including in our first loop example.
 
@@ -72,7 +72,7 @@ while(n < 5) {
 }
 ```
 
-That prints `0` through `4`. The condition is checked **before** each iteration. When `n` reaches `5`, the condition is false, and the loop exits.
+That prints `0` through `4`. The condition is checked **before** each repetition. When `n` reaches `5`, the condition is false, and the loop exits.
 
 If the condition is false on the first check, the body never runs. If you forget to update the variable that makes the condition eventually false, you have an **infinite loop** — the script runs forever (or until you Ctrl-C it). Spotting and avoiding this is a real skill.
 
@@ -101,7 +101,7 @@ for(var i = 0; i < 5; ++i) {
 }
 ```
 
-Read it as: *"start with `i = 0`; keep going while `i < 5`; after each iteration, increment `i`."* Same output structure as the `while` loop above, just more compact.
+Read it as: *"start with `i = 0`; keep going while `i < 5`; after each repetition, increment `i`."* Same output structure as the `while` loop above, just more compact.
 
 The three parts can each be empty:
 
@@ -146,7 +146,7 @@ search: for(var i = 1; i < 100; ++i) {
 }
 ```
 
-`break` exits the named loop entirely. `continue` skips to the next iteration of the named loop:
+`break` exits the named loop entirely. `continue` skips to the next repetition of the named loop:
 
 ```js
 print_evens: for(var n = 0; n < 10; ++n) {
@@ -180,7 +180,7 @@ if(i % 13 === 0) {
 
 ### When to use which loop
 
-- **`for`** — when you know the count, or have a clear iteration structure (from X to Y, character-by-character, etc.)
+- **`for`** — when you know the count, or have a clear repetition structure (from X to Y, character-by-character, etc.)
 - **`while`** — when the loop continues "until something changes" and there's no clear ending
 - **`do...while`** — rarely used; only when the while-loop must run at least once
 
@@ -191,7 +191,7 @@ In practice our codebase is mostly `for` loops, with the occasional `while` for 
 1. **Count up.** Write a `for` loop labeled `count_up` that prints the numbers 1 through 10.
 2. **Count down.** Write a `for` loop labeled `count_down` that prints from 10 down to 1. (Hint: start at 10, condition `>= 1`, decrement.)
 3. **Sum the first hundred.** Write a labeled `for` loop that adds the numbers 1 through 100 into a variable `total`, then `Echo`s `total`. Expected output: `5050`.
-4. **First match.** Write a labeled `for` loop that scans the numbers 1 through 50 looking for the first multiple of 7, prints it, and `break`s out of the loop. (The answer is 7. Make sure the loop stops there and doesn't keep iterating.)
+4. **First match.** Write a labeled `for` loop that scans the numbers 1 through 50 looking for the first multiple of 7, prints it, and `break`s out of the loop. (The answer is 7. Make sure the loop stops there and doesn't keep repeating.)
 5. **Skip the bad ones.** Write a labeled `for` loop over 1 through 20 that uses `continue` to skip multiples of 3 and `Echo`s the rest.
 
 ---
@@ -234,7 +234,7 @@ sayHello();
 sayHello();
 ```
 
-That prints `Hello!` three times. The function is **defined** once with `function sayHello() { ... }` and **called** three times with `sayHello();`. The parentheses are how JScript knows you're invoking the function rather than just referring to it.
+That prints `Hello!` three times. The function is **defined** once with `function sayHello() { ... }` and **called** three times with `sayHello();`. The parentheses are how JScript knows you're calling the function rather than just referring to it.
 
 ### Header comments are required
 
@@ -422,7 +422,7 @@ showAll("a", "b", "c");
 > - **unshift** — add to the start
 > - **shift** — remove from the start (and return what was removed)
 > - **slice** — copy a range of items into a new array
-> - **iterate** — to loop over each item
+> - **iterate** — to handle item(s) in a list
 
 An **array** is an ordered list of values. JScript arrays can hold any types — strings, numbers, booleans, even other arrays — though in practice you usually use one type per array.
 
