@@ -23,11 +23,10 @@ The capstone for Tier 2 is a real utility script — small enough to write in on
 > - **increment** — to add 1 (`++n`)
 > - **decrement** — to subtract 1 (`--n`)
 > - **loop** — code that repeats
-> - **iterate** — repeat
 > - **while loop** — repeats as long as a condition is true
 > - **do-while loop** — like `while`, but always runs at least once
 > - **for loop** — repeats with a counter
-> - **infinite loop** — a loop that never stops (*usually* a bug)
+> - **infinite loop** — a loop that never stops (a bug)
 > - **label** — a name attached to a loop, used for `break` and `continue`
 > - **break** — exit a loop early
 > - **continue** — skip to the next iteration of a loop
@@ -68,7 +67,7 @@ A **loop** runs a block of code repeatedly. The simplest is `while`, which runs 
 var n = 0;
 
 while(n < 5) {
-    WScript.Echo("Step " + n);
+    WScript.Echo(n);
     ++n;
 }
 ```
@@ -85,7 +84,7 @@ A close cousin: runs the body **first**, then checks the condition.
 var n = 0;
 
 do {
-    WScript.Echo("Step " + n);
+    WScript.Echo(n);
     ++n;
 } while(n < 5);
 ```
@@ -97,12 +96,12 @@ Same output. The difference matters when the condition starts false: a `do...whi
 The workhorse. A `for` loop has three parts in its header — initialization, condition, and step:
 
 ```js
-for(var n = 0; n < 5; ++n) {
-    WScript.Echo("Step " + n);
+for(var i = 0; i < 5; ++i) {
+    WScript.Echo("Step " + i);
 }
 ```
 
-Read it as: *"start with `n = 0`; keep going while `n < 5`; after each iteration, increment `n`."* Same output structure as the `while` loop above, just more compact.
+Read it as: *"start with `i = 0`; keep going while `i < 5`; after each iteration, increment `i`."* Same output structure as the `while` loop above, just more compact.
 
 The three parts can each be empty:
 
@@ -112,7 +111,7 @@ for(;;) {
 }
 ```
 
-A small note on style: the for-loop step expression is the **one place** where postfix `n++` is acceptable alongside prefix `++n`. Everywhere else, prefer prefix.
+A small note on style: the for-loop step expression is the **one place** where postfix `i++` is acceptable alongside prefix `++i`. Everywhere else, prefer prefix.
 
 ### Labeled loops — required style
 
@@ -121,18 +120,18 @@ Here's something specific to our codebase: **all `for` and `while` loops must be
 Label names use `snake_case`:
 
 ```js
-loop_steps: for(var n = 0; n < 5; ++n) {
-    WScript.Echo("Step " + n);
+loop_steps: for(var i = 0; i < 5; ++i) {
+    WScript.Echo("Step " + i);
 }
 ```
 
-Why force this? Because nested loops are common in our codebase, and an unlabeled `break` or `continue` always exits the *innermost* loop — which is often not what you want once nesting gets thick. Requiring labels means there's never ambiguity about which loop is being affected, even in shallow code where it doesn't matter yet. Build the habit early.
+Why force this? Because nested loops are common in our transpiler code, and an unlabeled `break` always exits the *innermost* loop — which is often not what you want once nesting gets thick. Requiring labels means there's never ambiguity about which loop is being affected, even in shallow code where it doesn't matter yet. Build the habit early.
 
 The rules:
 
 - Label name on the same line as the loop, followed by `:`, then the loop keyword.
 - `break` and `continue` **always** name their target: `break loop_steps;` or `continue loop_steps;`.
-- A bare `break;` or `continue;` is **not allowed** in our codebase for loops.
+- A bare `break;` or `continue;` is **not allowed** in our codebase.
 - For long or deeply nested loops, add a closing breadcrumb comment after the closing brace: `} // :loop_steps`. The exact rule for when breadcrumbs are required is in Tier 3 territory; for now, follow whatever pattern the surrounding code uses.
 
 Example with `break`:
@@ -181,9 +180,9 @@ if(i % 13 === 0) {
 
 ### When to use which loop
 
-- **`for`** — when you know the count, or have a clear iteration structure (index from 0 to N, character-by-character scan, etc.)
-- **`while`** — when the loop continues "until something changes" and there's no clean counter
-- **`do...while`** — rarely; only when the body must run at least once
+- **`for`** — when you know the count, or have a clear iteration structure (from X to Y, character-by-character, etc.)
+- **`while`** — when the loop continues "until something changes" and there's no clear ending
+- **`do...while`** — rarely used; only when the while-loop must run at least once
 
 In practice our codebase is mostly `for` loops, with the occasional `while` for character-by-character scanning in the transpilers.
 
@@ -235,11 +234,11 @@ sayHello();
 sayHello();
 ```
 
-That prints `Hello!` three times. The function is **defined** once with `function sayHello() { ... }` and **called** three times with `sayHello();`. The parentheses are how JScript knows you're calling the function rather than just referring to it.
+That prints `Hello!` three times. The function is **defined** once with `function sayHello() { ... }` and **called** three times with `sayHello();`. The parentheses are how JScript knows you're invoking the function rather than just referring to it.
 
-### Header comments are required in our codebase
+### Header comments are required
 
-Notice the comment block above the function. **Every global function in our codebase must have a header comment** describing what it does and its inputs and outputs. If you have a function ("child") inside a function ("parent"), the child function does not need a header comment. The style guide is firm. The format:
+Notice the comment block above the function. **Every function in our codebase must have a header comment** describing what it does and its inputs and outputs. The style guide is firm. The format:
 
 ```
 /*
@@ -321,9 +320,8 @@ Functions without an explicit `return` automatically return `undefined`. So `say
 Variables declared with `var` inside a function are **local** to that function. Code outside can't see them:
 
 ```js
-// doStuff is global-scope (can be reached anywhere)
 function doStuff() {
-    var temp = 42;      // temp is local-scope (can only be reached inside of doStuff)
+    var temp = 42;
     WScript.Echo(temp); // works — we're inside the function
 }
 
@@ -337,7 +335,7 @@ Conversely, code inside a function can read variables declared outside:
 var globalCount = 0;
 
 function increment() {
-    ++globalCount;  // can read and modify the global-scope variable
+    ++globalCount; // reads and modifies the outer variable
 }
 
 increment();
@@ -725,11 +723,10 @@ Forgetting to escape backslashes in Windows paths is the most common mistake. `"
 > **New words in this lesson**
 >
 > - **parse** — to read text and convert it into another type (usually a number)
-> - **radix** — the number base (10 for normal numbers, 16 for hexadecimal, 2 for binary, etc.)
+> - **radix** — the number base (10 for normal numbers, 16 for hexadecimal, etc.)
 > - **NaN** — "Not a Number," what you get from a failed number conversion
 > - **conversion** — turning a value of one type into another type
 > - **constant** — a fixed value that never changes (like `Math.PI`)
-> - **truncate** — drop or ignore the rest of a value
 
 JScript provides a `Math` object with number-related functions, plus a few global functions for converting between strings and numbers.
 
@@ -861,7 +858,7 @@ The parentheses around `(42)` and `(255)` are needed because `.toString` directl
 > - **throw** — to raise an error from your own code
 > - **try/catch** — a structure that handles errors instead of letting the script crash
 > - **finally** — a block that always runs after `try`/`catch`, whether or not there was an error
-> - **propagate** — when an error keeps moving "up" through your code until something catches it
+> - **propagate** — when an error you don't catch keeps moving "up" through your code until something does
 
 When something goes wrong at runtime — a function gets bad input, a file doesn't exist, a number conversion fails — JScript "throws" an **error**. By default, an unhandled error halts the script and prints a message. Often you want to handle it instead.
 

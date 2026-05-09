@@ -19,6 +19,13 @@ The capstone for Tier 3 is a real maintenance script — file processing, error 
 
 From here on, examples use modern syntax. If you see something unfamiliar, check Lesson 2.8.
 
+### External resources
+
+For self-study on a connected machine:
+
+- **[https://developer.mozilla.org/JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)** — **The** official source for anything JavaScript related.
+- **[https://javascript.info](https://javascript.info/)** — A beginner and expert friendly breakdown of new and old features.
+
 ---
 
 ## Lesson 3.1: Template literals — a closer look
@@ -27,7 +34,7 @@ From here on, examples use modern syntax. If you see something unfamiliar, check
 >
 > - **template literal** — a string written between backticks (`` ` ``) instead of regular quotes
 > - **interpolation** — inserting a value into a string with `${...}`
-> - **backtick** — the `` ` `` character (not the same as a single quote)
+> - **backtick** — the `` ` `` character (not the same as a single quote); on most keyboards it's the key directly above Tab
 > - **expression** — anything that produces a value (a number, a calculation, a function call, etc.)
 > - **ternary** — the `condition ? a : b` shortcut for if/else
 > - **escape** — using `\` to include a special character literally

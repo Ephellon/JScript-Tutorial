@@ -9,7 +9,6 @@ What we'll cover:
 - **Reading ES3 patterns** — recognizing how the codebase does what you learned to do in modern syntax
 - **Debugging without a debugger** — print debugging, logging, bisecting, trace-by-hand
 - **Production-code gotchas** — bugs you'll find in real code
-- **The project journal** — what it is, how to use it, when to add to it
 
 There's no traditional capstone for Tier 4. Instead, the final exercise is a maintenance task: take a real script from the codebase, find a real (or planted) bug, and fix it using the techniques you've learned. The goal is *documented self-sufficiency* — knowing where to look, who to ask, and how to verify a fix.
 
@@ -24,7 +23,7 @@ There's no traditional capstone for Tier 4. Instead, the final exercise is a mai
 > - **heuristic** — a quick mental rule of thumb, not a hard rule
 > - **trace by hand** — walk through code on paper without running it
 > - **ESX** — our shorthand for "modern JavaScript" (post-ES2015)
-> - **`imports()`** — the lowercase polyfill function that loads ESX modules at runtime
+> - **`imports`** — a lowercase global function that loads other scripts at runtime; ES3-compatible and works in any version of JS
 > - **`debug`** — our project's mini-terminal for runtime inspection
 
 You can write a complete utility script. That's a real skill. But reading code you didn't write is *harder*, not easier — and it's most of what you'll do as a maintainer.
@@ -44,7 +43,7 @@ Plan for reading to take longer than you think. Don't beat yourself up when it d
 
 For a single-script program, start at the bottom of the file and work up. The bottom usually has the entry point — the `main()` call or the top-level `try/catch` or the actual work. Read it first. Then trace into the functions it calls.
 
-For a multi-file project, start at the entry-point file. In our codebase, that's `AutoIATE*` for the main program. Open it, find where execution actually starts (after the imports and preamble), and follow from there.
+For a multi-file project, start at the entry-point file. In our codebase, that's `AutoIATE.js` for the main program. Open it, find where execution actually starts (after the imports and preamble), and follow from there.
 
 Don't read every file top-to-bottom. Read the entry point, then trace into the named functions when their behavior matters. Most files have plenty of code you'll never need to look at.
 
@@ -89,7 +88,7 @@ This isn't a judgment about the original author. It's a heuristic about *attenti
 
 The bulk of the codebase is hand-written ES3 — `var`, `function`, prototype-based patterns, and the like. These files are the source *and* what the engine runs. There's no transformation step in between.
 
-A handful of specific modules use modern syntax (ESX) and are routed through `baseline` at runtime via the `imports()` polyfill (lowercase, since `import` is reserved). The `debug` mini-terminal also runs through `baseline`. When you see modern syntax — `let`, `const`, arrow functions, template literals — in a project file, you're looking at one of those ESX modules or `debug`. Otherwise, you're looking at ES3 directly.
+A handful of specific modules use modern syntax (ESX) and are routed through `baseline` at runtime when loaded via the `imports` global. `imports` itself is a regular ES3-compatible function — it works in any JS version. The `debug` mini-terminal also runs through `baseline`. When you see modern syntax — `let`, `const`, arrow functions, template literals — in a project file, you're looking at one of those ESX modules or `debug`. Otherwise, you're looking at ES3 directly.
 
 When tracking down a runtime error, line numbers point at the actual file you're reading. No source-vs-output mapping required.
 
@@ -108,7 +107,6 @@ In an air-gapped environment, your dev box's filesystem search and grep tools ar
 - **Search for literal strings.** Error messages, file paths, magic constants — all easier to find by their literal text than by name.
 - **Search for symbol names.** Function names, class names, variable names. The first hit is usually the definition; later hits are uses.
 - **Search for unusual patterns.** A weird-looking expression you don't understand might appear elsewhere in the codebase. Other instances may be commented or paired with surrounding context that explains it.
-- **Search the journal.** Most surprising behavior has been documented before.
 
 ### Picking your battles
 
@@ -151,7 +149,7 @@ AutoIATE automates ATLAS systems — running tests, capturing output, handling d
 2. **Tools and utilities** above the polyfills — JSON, beautifier, transpilers, formatting.
 3. **Core logic** — non-polyfill program logic for loading tests, gathering input, generating UI.
 4. **Automation logic** — the side that actually runs automation against ATLAS.
-5. **Entry point** — `AutoIATE*`, where users start.
+5. **Entry point** — `AutoIATE.js`, where users start.
 
 Files load roughly bottom-up: polyfills first, so the rest of the code can rely on them.
 
@@ -183,14 +181,16 @@ Each file has a defined role.
 
 #### Tools
 
-- **`baseline`** — The ESX transpiler. Translates modern JavaScript source to ES3 output that WSH can run. Used at runtime when an ESX module is loaded via `imports()`, and inside the `debug` mini-terminal.
+- **`baseline`** — The ESX transpiler. Translates modern JavaScript source to ES3 output that WSH can run. Used at runtime when an ESX module is loaded via the `imports` global, and inside the `debug` mini-terminal.
 - **`parseAuto`** — Handles the **AUTO** language: a domain-specific automation language used in our scripts. `parseAuto` is essentially a transpiler from AUTO to JScript, parallel to how `baseline` converts modern JS to ES3.
 - **`beautify`** — A JS beautifier. Useful for inspecting transpiler output (since the output is technically valid but not human-friendly).
 - **`figlet`** — Generates large ASCII text. Used for CLI banners and visible separators in output.
 
 #### Entry point
 
-- **`AutoIATE*`** — The main UI/UX entry point. This is the file users actually run when they invoke the program. The `*` covers variants (versions, configurations).
+- **`AutoIATE.js`** — The main UI/UX entry point. This is the file users actually run when they invoke the program. There's only one of these — no version suffixes.
+
+> **Nice to Know.** The `*` you'll occasionally see (e.g., `AutoIATE*` in older docs or notes) is a *flag* indicating a non-imported script: one loaded directly via the `core` or `auto` preambles rather than pulled in via `imports`. It's not a wildcard for variants.
 
 ### Loading order in practice
 
@@ -200,7 +200,7 @@ When you run `AutoIATE.js`:
 2. **Polyfills** load next: `polyfills`, `symbol`, `bigint`, `json3`, `unorm` (which itself uses `unormdata`).
 3. **Tools** load if they're needed: `baseline` if dynamic transpilation happens at runtime, `parseAuto` for AUTO input, `beautify` for debugging output, etc.
 4. **Logic** layers load: `sub_core`, then `sub_auto` if relevant.
-5. **`AutoIATE*`** runs as the entry point, calling into the loaded modules.
+5. **`AutoIATE.js`** runs as the entry point, calling into the loaded modules.
 
 If you're tracking down "why doesn't this thing exist when my script runs?", the answer is usually load order — your code is running before its dependency was loaded. The fix is usually to import what you need explicitly, even if a preamble would have loaded it eventually.
 
@@ -214,7 +214,7 @@ A rough rule of thumb for "I need to find or modify X":
 | Test loading, UI generation, input gathering | `sub_core` |
 | Automation-specific logic | `sub_auto` |
 | Shared constants or globals (`WINDOW`, etc.) | `core` |
-| The user-facing entry point | `AutoIATE*` |
+| The user-facing entry point | `AutoIATE.js` |
 | Something AUTO-language related | `parseAuto` |
 | Something baseline-transform related | `baseline` |
 | Something Unicode/encoding related | `unorm` (data lives in `unormdata`) |
@@ -545,7 +545,7 @@ Not strictly equivalent — factories return plain objects, not "instances." But
 
 ### Recognizing rare ESX files
 
-Most files in the codebase are ES3 — flat `var` declarations, `function` declarations, prototype assignments. A small number are ESX (modern syntax) and get transpiled by `baseline` at runtime when loaded via `imports()`.
+Most files in the codebase are ES3 — flat `var` declarations, `function` declarations, prototype assignments. A small number are ESX (modern syntax) and get transpiled by `baseline` at runtime when loaded via the `imports` global.
 
 Visual indicators that you're in an ESX file:
 
@@ -553,14 +553,31 @@ Visual indicators that you're in an ESX file:
 - Arrow functions: `(x) => ...`
 - Template literals (backticks)
 - `class` keyword
-- Static `import`/`export` keywords (note: lowercase `imports()` is the polyfill function call; uppercase `import` is the static syntax)
 - Spread/rest `...`
 
 If you don't see any of these, assume ES3 and read accordingly.
 
 ### Exercises
 
-1. **Translate a class.** Take any class you wrote in Tier 3 (e.g., `Counter` or `Person`). Rewrite it in ES3 — constructor function plus prototype assignments. Confirm it behaves identically.
+1. **Translate a class.** Translate this class to ES3 — constructor function plus prototype assignments. Confirm it behaves identically by creating an instance, calling each method, and printing the results.
+
+   ```js
+   class Person {
+       constructor(name, age) {
+           this.name = name;
+           this.age = age;
+       }
+
+       greet() {
+           WScript.Echo(`Hello, I'm ${this.name}.`);
+       }
+
+       haveBirthday() {
+           ++this.age;
+           WScript.Echo(`${this.name} is now ${this.age}.`);
+       }
+   }
+   ```
 2. **Find an IIFE.** Look through the codebase for an IIFE-based module pattern. What's "private" inside it? What's exposed in the return value?
 3. **Recognize `var self = this`.** Find a function that uses the `var self = this` pattern. What `this`-rebinding problem is it working around? What would the modern arrow-function version look like?
 4. **Defaulting audit.** Find three different defaulting patterns in the codebase: `x != null ? x : default`, `x || default`, and `if(typeof x === "undefined")`. Note any cases where the wrong pattern is used (e.g., `||` on a value that could legitimately be `0` or `""`).
@@ -579,11 +596,29 @@ If you don't see any of these, assume ES3 and read accordingly.
 > - **stack trace** — the chain of function calls leading up to an error
 > - **reproduce** — make a bug happen on demand from a known starting point
 > - **regression test** — a test that protects against a bug coming back
-> - **`console.log`** — a polyfilled function in our environment, behaves like in modern JS
+> - **`console`** — universally available in our codebase: `console.log`, `console.warn`, `console.error`
+> - **`debug`** — universally available: a runtime-error mini-terminal that digs deeper than JScript's native error reporting
+> - **static error** — a problem present in source before execution (typically a syntax error)
+> - **runtime error** — a problem that only appears once code is running
 
-In our environment you don't have a step-debugger. WSH supports the antique Microsoft Script Debugger, but it's unreliable. Your tools are: `Echo`, `console.log` (polyfilled), file-based logging, careful reading, and the `debug` mini-terminal.
+In our environment you don't have a step-debugger. WSH supports the antique Microsoft Script Debugger, but it's unreliable. Your tools are: `Echo`, `console`, file-based logging, careful reading, and the `debug` mini-terminal. Both `console` and `debug` are universally available across the codebase — no special imports needed.
 
 That sounds limiting, and it is. But it forces good debugging discipline — narrowing the bug down by intentional steps, instead of stepping through code line by line and hoping to spot it.
+
+### Two layers of error reporting
+
+Before getting into tools, know how errors get caught in this codebase:
+
+- **`core` and `auto` (the preambles)** catch *static* errors: hard-coded syntax problems, malformed ES3, anything wrong before execution begins. These fire at load time, before the script runs.
+- **`debug`** catches *runtime* errors: things that only manifest once code is running. It also digs further than JScript's native reporting.
+
+Native JScript error reporting bottoms out at the nearest catchable point. If the call stack is `AutoIATE → core → polyfills → bigint`, JScript will report the error at `AutoIATE` (where the catch lives), not at `bigint` where it actually originated. `debug` digs past that — it tries to find the line in `bigint` that caused the problem.
+
+So:
+
+- Static / load-time problem → preamble (`core` or `auto`) reports it.
+- Runtime problem with a near catch → JScript reports at the catch.
+- Runtime problem you want traced to its real source → use `debug`.
 
 ### Print debugging — `Echo` and `console`
 
@@ -595,7 +630,7 @@ processFile(path);
 WScript.Echo("done with processFile");
 ```
 
-For more structured output, use `console.log` — polyfilled in our environment to behave like modern JS:
+For more structured output, use `console`:
 
 ```js
 console.log("user state:", user);
@@ -616,7 +651,7 @@ WScript.Echo(JSON.stringify(obj, null, 2));
 The `2` is the indentation level — produces formatted, multi-line output. Useful when:
 
 - The object has nested structure
-- You want a snapshot you can paste into a journal entry or share with someone
+- You want a snapshot you can save or share with someone
 
 Caveats:
 
@@ -701,15 +736,14 @@ Common error messages and what they mean:
 - **`File not found` / `Path not found`** — exactly what it says. Verify the path; check escaping (`\` vs `\\`).
 - **`Permission denied`** — file is locked, in use, or you don't have rights.
 
-When the error doesn't make sense, **check the journal first**.
-
 ### The `debug` mini-terminal
 
-The codebase ships a `debug` function that opens an interactive REPL. Expressions you paste in are evaluated through `baseline`, so modern syntax works. Useful for:
+`debug` is universally available — call it from anywhere without needing to import anything. It opens an interactive REPL. Expressions you type in are evaluated through `baseline`, so modern syntax works. Useful for:
 
 - Inspecting a value mid-execution.
 - Trying a fix idea before committing it to source.
 - Probing the runtime state when an error doesn't tell you enough.
+- Tracing a runtime error past JScript's nearest-catch limit, down to the actual originating line.
 
 Drop a `debug()` call wherever you want to pause and explore. When the script reaches it, you get an interactive prompt with access to the surrounding scope.
 
@@ -726,7 +760,7 @@ Slow but reliable. It's the technique that finds bugs nothing else finds — the
 When a real-world bug fires, the first instinct is often "fix it and move on." Resist. The right move:
 
 1. **Reproduce it.** Find a minimal input that triggers the bug. If the input is sensitive, scrub or redact.
-2. **Save the reproduction.** A few lines that always reproduce the bug, kept somewhere — a scratch script, a journal entry, a test file.
+2. **Save the reproduction.** A few lines that always reproduce the bug, kept somewhere — a scratch script, a notes file, a test file.
 3. **Then fix.**
 4. **Verify the fix against the reproduction.** Confirm the bug is gone *and* nothing nearby broke.
 
@@ -736,10 +770,10 @@ This pays off twice: the next time someone hits a similar bug, the reproduction 
 
 1. **Echo bisect.** Write a script with a deliberate bug (e.g., a typo'd variable or a missing function). Use `Echo` checkpoints to bisect to the failing line.
 2. **JSON dump.** Take a script that operates on an object. Add `WScript.Echo(JSON.stringify(obj, null, 2))` at one point to dump its state. Read the output — does it match what you expected?
-3. **Decode an error.** Take any error message you've encountered. Walk through it: what file, what line, what kind of error, what the error text means. If the error makes no sense, check the journal.
+3. **Decode an error.** Take any error message you've encountered. Walk through it: what file, what line, what kind of error, what the error text means. If the error makes no sense, follow the call back through the preambles — the actual cause may be deeper than the catch suggests, and `debug` can dig further.
 4. **Trace by hand.** Pick a non-trivial function from the codebase. Without running it, walk through its execution with a sample input. Note where you got stuck or surprised.
 5. **Use `debug`.** Find a `debug()` call in the codebase (or add one to a test script). When it fires, try inspecting a few values. Note what's available and what's not.
-6. **Reproduce a fix.** Find a closed-out journal entry describing a past bug. Write a minimal reproduction script for that bug as if you were filing it fresh. Confirm the current code no longer exhibits the bug.
+6. **Two-tier error walk.** Find a section of the codebase loaded via `core` or `auto`. Trace what happens if there's a deliberate syntax error there (mentally — don't break a working file): which preamble catches it, where does it report? Now imagine a runtime error in the same file: where does JScript report it, and how would `debug` change what you see?
 
 ---
 
@@ -924,110 +958,6 @@ Read the comments and error messages. When they don't match what the code does, 
 
 ---
 
-## Lesson 4.6: The project journal
-
-> **New words in this lesson**
->
-> - **journal** — `journal.txt`, the project's running record of session notes, findings, and decisions
-> - **session transcript** — a record of what was done in a single working session
-> - **closed-out** — an issue that's been resolved (often noted in the journal)
-> - **breadcrumb** — a small note left for future readers (a pointer to the journal, a known-issue marker)
-
-The codebase has a long history. Bugs have been found and fixed. Surprising behaviors have been documented. Decisions have been made for reasons that aren't obvious from the code. All of that lives in `journal.txt`.
-
-This lesson covers what the journal is, how to use it, and when to add to it.
-
-### What's in the journal
-
-`journal.txt` is the project's running record. It's not a formal document — it's more like a working log. Typical entries include:
-
-- **Session transcripts** — notes from a single working session: what was investigated, what was changed, what was learned.
-- **Closed-out bug records** — when a tricky bug is fixed, the journal usually has the trail of investigation: how it was reproduced, what the actual cause was, what the fix was.
-- **Known-issue notes** — bugs we know about but haven't fixed yet, with notes on how to work around them.
-- **Decision records** — choices made for non-obvious reasons. "We're using `Array.prototype.slice.call(arguments)` here instead of `Array.from` because the latter wasn't polyfilled when this was written. Could be revisited."
-- **Architecture notes** — high-level explanations of why something is structured the way it is.
-
-It's not organized like a textbook. It's chronological with occasional thematic sections.
-
-### Why search the journal first
-
-When you encounter:
-
-- An error message that doesn't make sense
-- A function whose name says one thing but body does another
-- A comment with `// known issue, see journal` or similar breadcrumb
-- A line that looks like a hack or workaround
-- Behavior that seems wrong but might be intentional
-
-…search the journal before changing anything. Most weird things have been weird before, and the explanation is usually there.
-
-### How to search it
-
-In our air-gapped environment, you have local search tools (whatever `find`/`grep` equivalents are installed). Strategies:
-
-- **Search the literal error text.** If the journal mentions the error, it'll usually quote it.
-- **Search by function or file name.** Past bugs often referenced specific code.
-- **Search by date.** If you know when something changed, the journal entries from around that time will mention it.
-- **Search by keyword.** "encoding," "hoisting," "race," "leak," "crash," "transform" all turn up relevant entries.
-
-If you don't find anything, that's also useful information. It means the issue is new, or hasn't been documented.
-
-### When to add to it
-
-Add a journal entry when:
-
-1. **You fix a bug that took more than 30 minutes to diagnose.** Future you (or someone else) shouldn't have to re-do that detective work.
-2. **You discover a non-obvious behavior** in the code or in WSH itself. Even if it's not a bug, document it so the next person doesn't waste time figuring it out.
-3. **You make a non-trivial decision.** Why a particular function is structured a certain way. Why an alternative was rejected.
-4. **You hit a known issue and work around it.** Even if you're not fixing the underlying bug, document the workaround.
-
-You don't need to log every change. Routine fixes don't need entries. The bar is roughly: "would this save someone an hour of confusion later?"
-
-### Writing a good entry
-
-A useful journal entry usually has:
-
-- **A date or timestamp.**
-- **A brief title or summary.** What's this about?
-- **Context.** What were you working on when this came up?
-- **The investigation.** What did you try? What did you learn?
-- **The resolution.** What did you change, or what's the conclusion?
-- **Any pointers.** Files affected, related entries, things to watch for.
-
-It doesn't have to be polished prose. Bullet points, code snippets, and informal language are all fine. The audience is future maintainers — usually yourself in three months.
-
-### Breadcrumbs in code
-
-Sometimes the journal entry is too detailed for in-code commentary, but readers still need to know there's something worth knowing. The convention is a breadcrumb comment pointing at the journal:
-
-```js
-// known issue with empty input — see journal entry 2024-08-15
-if(!input)
-    return defaultValue;
-```
-
-When you see one of these, look it up in the journal before "fixing" the apparent oddity. It's there for a reason.
-
-### The journal as a learning resource
-
-Apart from being a working record, the journal is one of the best ways to learn the codebase. Reading old entries — even ones not relevant to current work — teaches you:
-
-- The history of the project (what's been built, what's been tried)
-- Common bug patterns (what usually goes wrong)
-- The reasoning behind current code (why things are the way they are)
-- The team's working style (how people approach problems)
-
-If you have downtime, browsing past journal entries is genuinely productive. Treat it as supplementary reading.
-
-### Exercises
-
-1. **Find a closed-out bug.** Search the journal for any entry describing a bug fix. Read the whole entry. Could you have reproduced the bug from the description alone?
-2. **Find a breadcrumb.** Search the codebase for in-code references to the journal (look for "journal" in comments). Pick one and find the corresponding entry. Does the entry explain what the comment hinted at?
-3. **Search by error text.** Pick any error message produced by the codebase. Search the journal for parts of that text. Are there past investigations of it?
-4. **Write a mock entry.** Pick any past change you've made (real or hypothetical). Write a journal entry for it. Does it have the elements above (context, investigation, resolution, pointers)? Refine until it does.
-
----
-
 ## Tier 4 wrap-up
 
 You can now:
@@ -1035,9 +965,8 @@ You can now:
 - Read JScript you didn't write — by entry-point, by symptom, by following imports
 - Navigate the AutoIATE codebase — knowing what each file does and where to look for things
 - Recognize ES3 patterns — constructor functions, IIFEs, `apply`/`call`, `arguments`, the canonical defaulting idiom
-- Debug without a step-debugger — `Echo`, `console.log`, file logs, `JSON.stringify`, bisecting, and the `debug` mini-terminal
+- Debug without a step-debugger — `Echo`, `console`, file logs, `JSON.stringify`, bisecting, and the `debug` mini-terminal
 - Spot common production-code gotchas — `==` traps, hoisting, `this` rebinding, encoding issues, file-handle leaks
-- Use the journal — searching it, adding to it, reading it as a learning resource
 
 That's confident maintenance. Not "I understand everything" — that's a higher tier and not the goal here. It's "I can find the answer, verify a fix, and document my work."
 
@@ -1048,12 +977,10 @@ Instead of a synthetic capstone, the final exercise is a real maintenance task. 
 For that task:
 
 1. **Read first.** Use the strategies from Lesson 4.1. Don't write anything until you understand the relevant code.
-2. **Search the journal.** Before changing anything, see if the area you're touching has prior history.
-3. **Reproduce the issue** (if it's a bug) using the techniques from Lesson 4.4.
-4. **Make the smallest change that fixes it.** No drive-by refactoring unless explicitly asked.
-5. **Verify against your reproduction.** Confirm the bug is gone and nothing nearby broke.
-6. **Add a journal entry** if anything you learned would save someone else time later.
-7. **Submit for review.** Walk the reviewer through what you changed and why.
+2. **Reproduce the issue** (if it's a bug) using the techniques from Lesson 4.4.
+3. **Make the smallest change that fixes it.** No drive-by refactoring unless explicitly asked.
+4. **Verify against your reproduction.** Confirm the bug is gone and nothing nearby broke.
+5. **Submit for review.** Walk the reviewer through what you changed and why.
 
 When you can do all of that without hand-holding — when the reviewer's questions are about the *change* rather than your *process* — Tier 4 is complete. From there, you're a maintainer.
 
@@ -1061,6 +988,6 @@ When you can do all of that without hand-holding — when the reviewer's questio
 
 The project hierarchy goes further: **Expert** (able to polyfill missing capabilities) and **Virtuoso** (can create new concepts and provide documentation). Those are not part of this tutorial — they require deeper architectural knowledge of the codebase, including the transpilers (`baseline`, `parseAuto`) themselves.
 
-The path there isn't more tutorials. It's reading, modifying, and gradually understanding more of the codebase as you maintain it. The journal will be your textbook.
+The path there isn't more tutorials. It's reading, modifying, and gradually understanding more of the codebase as you maintain it.
 
 Welcome to the team.
